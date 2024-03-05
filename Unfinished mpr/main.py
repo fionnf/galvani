@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import os
+import plotly.graph_objs as go
 pd.set_option('display.max_columns', None)
 
 def identify_eclab_files(directory):
@@ -26,7 +27,7 @@ def eclab_voltage(processed_voltage_df, start_time, end_time):
 
     # Filter DataFrame between start_time and end_time
     volt_df = processed_voltage_df[
-        (processed_voltage_df['absolute_time'] >= start_time) & (processed_voltage_df['absolute_time'] <= end_time)]
+        (processed_voltage_df['Timestamp'] >= start_time) & (processed_voltage_df['Timestamp'] <= end_time)]
 
     return volt_df
 
@@ -36,6 +37,8 @@ def process_eclab(directory):
     mpl_file = eclabfiles[1]
     print('Processing MPR file for capacity plot')
     mpr_file = BioLogic.MPRfile(mpr_file_path)
+    start_date = mpr_file.startdate
+    print(f"Start Date: {start_date}")
     df = pd.DataFrame(mpr_file.data)
     print(df)
     print(df.columns)
@@ -90,5 +93,32 @@ def process_eclab(directory):
 
     return processed_cycle_df, processed_voltage_df
 
+def create_voltage_trace(df):
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=df['Voltage'],
+        y=df['Timestamp'],
+        mode='lines',
+        line=dict(color='Red')
+    ))
+
+    fig.update_layout(
+        title="Voltage Trace",
+        xaxis_title="Voltage (V)",
+        yaxis_title="Time"
+    )
+
+    return fig
+
+past_start_datetime = '2024-02-21 02:16'
+past_end_datetime = '2024-02-21 05:00'
+start_datetime = datetime.strptime(past_start_datetime, '%Y-%m-%d %H:%M')
+end_datetime = datetime.strptime(past_end_datetime, '%Y-%m-%d %H:%M')
 df = process_eclab(r"C:\Users\S3941868\PycharmProjects\galvani\Unfinished mpr")
-print(df)
+
+volt = df[1]
+print(volt)
+volt_df = eclab_voltage(volt,start_datetime,end_datetime)
+print(volt_df)
+create_voltage_trace(volt_df)
