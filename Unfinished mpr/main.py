@@ -32,16 +32,16 @@ def eclab_voltage(processed_voltage_df, start_time, end_time):
     return volt_df
 
 def process_eclab(directory):
+
+    print('Processing MPR file')
+
     eclabfiles = identify_eclab_files(directory)
     mpr_file_path = eclabfiles[0]
     mpl_file = eclabfiles[1]
-    print('Processing MPR file for capacity plot')
     mpr_file = BioLogic.MPRfile(mpr_file_path)
-    start_date = mpr_file.startdate
-    print(f"Start Date: {start_date}")
+
     df = pd.DataFrame(mpr_file.data)
     print(df)
-    print(df.columns)
 
     def extract_start_time(mpl_file_path):
         # Extracts the start time from an MPL file
@@ -65,8 +65,14 @@ def process_eclab(directory):
 
     coulombic_efficiency = (discharge_capacity / charge_capacity) * 100
 
-    #absolote time handling
-    start_time = extract_start_time(mpl_file)
+    if not mpl_file:
+        print('no mpl')
+        start_time = pd.to_datetime(mpr_file.timestamp)
+        print(start_time)
+    else:
+        print('mpl found')
+        start_time = extract_start_time(mpl_file)
+
     df['Absolute_Time_UTC'] = df['time/s'].apply(lambda s: start_time + timedelta(seconds=s))
 
     time = df.groupby('Full_Cycle_Number')['time/s'].max()
@@ -90,7 +96,7 @@ def process_eclab(directory):
         'Timestamp':full_time_utc,
         'Voltage':full_volt
     })
-
+    print('MPR Processed')
     return processed_cycle_df, processed_voltage_df
 
 def create_voltage_trace(df):
@@ -115,7 +121,7 @@ past_start_datetime = '2024-02-21 02:16'
 past_end_datetime = '2024-02-21 05:00'
 start_datetime = datetime.strptime(past_start_datetime, '%Y-%m-%d %H:%M')
 end_datetime = datetime.strptime(past_end_datetime, '%Y-%m-%d %H:%M')
-df = process_eclab(r"C:\Users\S3941868\PycharmProjects\galvani\Unfinished mpr")
+df = process_eclab(r"C:\Users\fionn\PyCharmProjects\galvani\finished_mpr")
 
 volt = df[1]
 print(volt)
